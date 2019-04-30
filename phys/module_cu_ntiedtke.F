@@ -160,6 +160,7 @@ contains
                 ,its,ite, jts,jte, kts,kte                      &
                 ,rthcuten,rqvcuten,rqccuten,rqicuten            &
                 ,rucuten, rvcuten                               &
+                ,mfup_cup, mfdn_cup                             &
                 ,f_qv    ,f_qc    ,f_qr    ,f_qi    ,f_qs       &
                                                                 )
 !-------------------------------------------------------------------
@@ -190,6 +191,8 @@ contains
 !                 cumulus scheme precipitation (kg/kg/s)
 !-- rqicuten      qi tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
+!-- mfup_cup      updraft mass flux from cumulus
+!-- mfdn_cup      downdraft mass flux from cumulus
 !-- rainc         accumulated total cumulus scheme precipitation (mm)
 !-- raincv        cumulus scheme precipitation (mm)
 !-- pratec        precipitiation rate from cumulus scheme (mm/s)
@@ -269,7 +272,9 @@ contains
                                         rqvcuten,                       &
                                         rthcuten,                       &
                                         rucuten,                        &
-                                        rvcuten
+                                        rvcuten,                        &
+                                        mfup_cup,                       &
+                                        mfdn_cup
 
 !
 ! flags relating to the optional tendency arrays declared above
@@ -318,6 +323,8 @@ contains
                                         v1,                             &
                                         zl,                             &
                                         omg,                            &
+                                        zmfu,                           &
+                                        zmfd,                           &
                                         ghtl                           
 
       integer, dimension(its:ite) ::                                    &
@@ -428,7 +435,8 @@ contains
       enddo
 !
 !########################################################################
-      call tiecnvn(u1,v1,t1,q1,q2,q3,q1b,t1b,ghtl,ghti,omg,prsl,prsi,evap,heatflux,  &
+      call tiecnvn(u1,v1,t1,q1,q2,q3,q1b,t1b,ghtl,ghti,omg,prsl,prsi,  &
+                  zmfu,zmfd,evap,heatflux,  &
                   rn,slimsk,im,kx,kx1,delt,dx)
 
       do i=its,ite
@@ -447,6 +455,18 @@ contains
         enddo
         pp = pp + 1
       enddo
+
+      if(present(mfup_cup))then
+          pp = 0
+          do k=kts,kte
+            zz = kte-pp
+            do i=its,ite
+              mfup_cup(i,k,j) = zmfu(i,zz)
+              mfdn_cup(i,k,j) = zmfd(i,zz)
+            enddo
+            pp = pp + 1
+          enddo
+      endif
 
       if(present(rqccuten))then
         if ( f_qc ) then
@@ -558,7 +578,7 @@ contains
 !          level 1 subroutine 'tiecnvn'
 !-----------------------------------------------------------------
       subroutine tiecnvn(pu,pv,pt,pqv,pqc,pqi,pqvf,ptf,poz,pzz,pomg, &
-     &         pap,paph,evap,hfx,zprecc,lndj,lq,km,km1,dt,dx)
+     &         pap,paph,zmfu,zmfd,evap,hfx,zprecc,lndj,lq,km,km1,dt,dx)
 !-----------------------------------------------------------------
 !  this is the interface between the model and the mass 
 !  flux convection module

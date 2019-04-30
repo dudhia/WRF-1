@@ -1418,6 +1418,7 @@ CONTAINS
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
                ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &
+               ,MFUP_CUP = mfup_cup, MFDN_CUP = mfdn_cup        &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
                                                              )
