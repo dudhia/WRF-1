@@ -122,6 +122,8 @@ CONTAINS
                  ! Optional trigger function activation variable
                      ,kfeta_trigger                                   &
                      ,nsas_dx_factor                                  &
+! Optional tracers as chem placeholder
+                     ,tracer,tracer_tend,num_tracer                   &
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,do_capsuppress                                  &
@@ -589,6 +591,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
                   INTENT(INOUT) ::                               &
                   QC_CU,QI_CU
+! optional tracers as chem placeholders (num_tracer cannot be optional)
+    INTEGER, INTENT(IN) :: num_tracer
+    REAL , OPTIONAL   ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
+    REAL , OPTIONAL   ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
                   
 #if (EM_CORE == 1)
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
@@ -1409,6 +1415,7 @@ CONTAINS
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+               ,NUM_TRACER=num_tracer                           &
               ! optionals
 #if (NMM_CORE == 1 )
                ,QVFTEN=FORCEQ, THFTEN=FORCET                    &
@@ -1421,6 +1428,8 @@ CONTAINS
                ,MFUP_CUP = mfup_cup, MFDN_CUP = mfdn_cup        &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
+! optional tracers as chem placeholders
+               ,TRACER=tracer, TRACER_TEND=tracer_tend          &
                                                              )
         ELSE
           CALL wrf_error_fatal('Lacking arguments for CU_NTIEDTKE in cumulus driver')

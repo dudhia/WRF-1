@@ -158,10 +158,12 @@ contains
                 ,ids,ide, jds,jde, kds,kde                      &
                 ,ims,ime, jms,jme, kms,kme                      &
                 ,its,ite, jts,jte, kts,kte                      &
+                ,num_tracer                                     &
                 ,rthcuten,rqvcuten,rqccuten,rqicuten            &
                 ,rucuten, rvcuten                               &
                 ,mfup_cup, mfdn_cup                             &
                 ,f_qv    ,f_qc    ,f_qr    ,f_qi    ,f_qs       &
+                ,tracer, tracer_tend                            &
                                                                 )
 !-------------------------------------------------------------------
       implicit none
@@ -289,6 +291,10 @@ contains
                                                   ,f_qr      &
                                                   ,f_qi      &
                                                   ,f_qs
+! optional tracers as chem placeholders (num_tracer cannot be optional)
+    INTEGER, INTENT(IN) :: num_tracer
+    REAL , OPTIONAL   ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
+    REAL , OPTIONAL   ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
 
 !--------------------------- local vars ------------------------------
       real      ::                                      &
