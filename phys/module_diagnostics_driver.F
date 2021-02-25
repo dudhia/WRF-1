@@ -391,6 +391,7 @@ CONTAINS
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
                 ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,GRAUPELNCV=grid%graupelncv, GRAUPEL_ACC_NC=grid%graupel_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -466,6 +467,7 @@ CONTAINS
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
                 ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,GRAUPELNCV=grid%graupelncv, GRAUPEL_ACC_NC=grid%graupel_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -543,6 +545,7 @@ CONTAINS
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
                 ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,GRAUPELNCV=grid%graupelncv, GRAUPEL_ACC_NC=grid%graupel_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -619,6 +622,7 @@ CONTAINS
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
                 ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,GRAUPELNCV=grid%graupelncv, GRAUPEL_ACC_NC=grid%graupel_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -695,6 +699,7 @@ CONTAINS
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
                 ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,GRAUPELNCV=grid%graupelncv, GRAUPEL_ACC_NC=grid%graupel_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
@@ -802,6 +807,7 @@ CONTAINS
                 ,NSSL_RHO_QH=config_flags%nssl_rho_qh                &  !  gthompsn
                 ,NSSL_RHO_QHL=config_flags%nssl_rho_qhl              &  !  gthompsn
                 ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc  &    
+                ,GRAUPELNCV=grid%graupelncv, GRAUPEL_ACC_NC=grid%graupel_acc_nc  &
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &

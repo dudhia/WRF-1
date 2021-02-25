@@ -259,6 +259,7 @@
        DO i = its, min(ite,ide-1)
             grid%prec_acc_nc(i,j) = 0.
             grid%snow_acc_nc(i,j)  = 0.
+            grid%graupel_acc_nc(i,j)  = 0.
             grid%sfcrunoff  (i,j) = 0.
             grid%udrunoff   (i,j) = 0.
 ! acsnow, and acrunoff are run-total

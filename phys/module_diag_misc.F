@@ -41,7 +41,7 @@ CONTAINS
                      ,nssl_rho_qh, nssl_rho_qhl                       &
                      ,nssl_alphah, nssl_alphahl                       &
                      ,prec_acc_c, prec_acc_nc, snow_acc_nc            &
-                     ,snowncv, prec_acc_dt, curr_secs2                &
+                     ,snowncv, graupel_acc_nc, graupelncv, prec_acc_dt, curr_secs2                &
                      ,nwp_diagnostics, diagflag                       &
                      ,history_interval                                &
                      ,itimestep                                       &
@@ -84,6 +84,7 @@ CONTAINS
 !-- RAINNC        explicit scheme precipitation since hour 0
 !-- RAINNCV       explicit scheme precipitation in one time step (mm)
 !-- SNOWNCV       explicit scheme snow in one time step (mm)
+!-- GRAUPELNCV    explicit scheme snow in one time step (mm)
 !-- HFX           surface sensible heat flux
 !-- LH            surface latent heat flux
 !-- SFCEVP        total surface evaporation
@@ -92,6 +93,7 @@ CONTAINS
 !-- PREC_ACC_C    accumulated convective precip over accumulation time prec_acc_dt
 !-- PREC_ACC_NC   accumulated explicit precip over accumulation time prec_acc_dt
 !-- SNOW_ACC_NC   accumulated explicit snow precip over accumulation time prec_acc_dt
+!-- GRAUPEL_ACC_NC   accumulated explicit graupel precip over accumulation time prec_acc_dt
 !-- PREC_ACC_DT   precip accumulation time, default is 60 min
 !-- CURR_SECS2    Time (s) since the beginning of the restart
 !-- NWP_DIAGNOSTICS  = 1, compute hourly maximum fields
@@ -164,6 +166,7 @@ CONTAINS
                                                     ,   RAINNCV  &
                                                     ,    RAINCV  &
                                                     ,   SNOWNCV  &
+                                                    ,GRAUPELNCV  &
                                                     ,       HFX  &
                                                     ,        LH  &
                                                     ,    SFCEVP  &  
@@ -194,7 +197,7 @@ CONTAINS
                       I_ACLWUPB,I_ACLWUPBC,I_ACLWDNB,I_ACLWDNBC
 
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::&
-                      PREC_ACC_C, PREC_ACC_NC, SNOW_ACC_NC
+                      PREC_ACC_C, PREC_ACC_NC, SNOW_ACC_NC, GRAUPEL_ACC_NC
 
    REAL, OPTIONAL, INTENT(IN)::  PREC_ACC_DT, CURR_SECS2
 
@@ -416,12 +419,15 @@ CONTAINS
             prec_acc_c(i,j)  = 0.
             prec_acc_nc(i,j) = 0.
             snow_acc_nc(i,j)  = 0.
+            graupel_acc_nc(i,j)  = 0.
          ENDIF
          prec_acc_c(i,j)  = prec_acc_c(i,j)  +  RAINCV(i,j)
          prec_acc_nc(i,j) = prec_acc_nc(i,j) + RAINNCV(i,j)
          prec_acc_c(i,j)  = MAX (prec_acc_c(i,j), 0.0)
          prec_acc_nc(i,j) = MAX (prec_acc_nc(i,j), 0.0)
          snow_acc_nc(i,j)   = snow_acc_nc(i,j) + SNOWNCV(I,J)
+         graupel_acc_nc(i,j) = graupel_acc_nc(i,j) + GRAUPELNCV(I,J)
+         graupel_acc_nc(i,j) = MAX (graupel_acc_nc(i,j), 0.0)
 ! add convective precip to snow bucket if t2 < 273.15
          IF ( t2(i,j) .lt. 273.15 ) THEN
          snow_acc_nc(i,j)   = snow_acc_nc(i,j) +  RAINCV(i,j)
