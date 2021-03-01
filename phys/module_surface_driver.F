@@ -74,9 +74,19 @@ CONTAINS
      &          ,shgxy    ,shcxy     ,shbxy     ,evgxy     ,evbxy     ,ghvxy        &
      &          ,ghbxy    ,irgxy     ,ircxy     ,irbxy     ,trxy      ,evcxy        &
      &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &                      
+! Headwaters extra output fields
+     &          ,qintsxy   ,qintrxy   ,qdripsxy   &
+     &          ,qdriprxy  ,qthrosxy  ,qthrorxy   &
+     &          ,qsnsubxy  ,qsnfroxy  ,qsubcxy    &
+     &          ,qfrocxy   ,qevacxy   ,qdewcxy,qfrzcxy   ,qmeltcxy   &
+     &          ,qsnbotxy  ,pondingxy ,PAHXY,PAHGXY,PAHVXY,PAHBXY,ICGXY,IGCXY,SCGXY,SGCXY&
+     &          ,fpicexy,RAINLSM,SNOWLSM &
+              ,   forctlsm   ,  forcqlsm  ,   forcplsm   &
+              ,   forczlsm   ,  forcwlsm &
+              , acc_ssoil, acc_qinsur, acc_qseva, acc_etrani, eflxbxy, soilenergy, snowenergy &
            ! Noah-MP ground water
      &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
-     &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
+     &          ,eqzwt    ,pexpxy   ,qlatxy  ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
      &          ,smoiseq  ,wtddt    ,stepwtd                                            &
                 ,gecros_state                                   & ! Optional gecros crop
      &          ,opt_thcnd                                                 &
@@ -885,6 +895,17 @@ CONTAINS
 	  SAVXY,   SAGXY, RSSUNXY, RSSHAXY,  BGAPXY,  WGAPXY,   TGVXY,   TGBXY,   CHVXY,   CHBXY,   SHGXY, &
 	  SHCXY,   SHBXY,   EVGXY,   EVBXY,   GHVXY,   GHBXY,   IRGXY,   IRCXY,   IRBXY,    TRXY,   EVCXY, &
        CHLEAFXY,  CHUCXY,  CHV2XY,  CHB2XY,CHSTARXY                         
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme)                   , INTENT(INOUT) :: acc_ssoil,acc_qinsur,acc_qseva
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme)                   , INTENT(  OUT) :: eflxbxy,soilenergy, snowenergy
+   REAL, OPTIONAL, DIMENSION(ims:ime , 1:num_soil_layers, jms:jme), INTENT(INOUT) :: acc_etrani
+
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::    &
+               qintsxy   ,qintrxy   ,qdripsxy   ,&
+               qdriprxy  ,qthrosxy  ,qthrorxy   ,&
+               qsnsubxy  ,qsnfroxy  ,qsubcxy    ,&
+               qfrocxy   ,qevacxy   ,qdewcxy,qfrzcxy   ,qmeltcxy   ,&
+               qsnbotxy  ,pondingxy, PAHXY      ,PAHGXY, PAHVXY, PAHBXY,ICGXY,IGCXY,SCGXY,SGCXY,&
+               fpicexy,RAINLSM,SNOWLSM,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm
    INTEGER,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: PLANTING
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: HARVEST
@@ -897,7 +918,7 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::  smoiseq
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) ::  &
     SMCWTDXY,   RECHXY, DEEPRECHXY, FDEPTHXY,  AREAXY,  RIVERCONDXY, RIVERBEDXY,  &
-    EQZWT,      PEXPXY, QRFXY,      QSPRINGXY, QSLATXY, QRFSXY,      QSPRINGSXY                         
+    EQZWT,      PEXPXY, QLATXY, QRFXY,      QSPRINGXY, QSLATXY, QRFSXY,      QSPRINGSXY                         
 
    REAL,    OPTIONAL, DIMENSION(ims:ime,60,jms:jme) :: gecros_state                  ! Optional gecros crop
 
