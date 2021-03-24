@@ -41,6 +41,13 @@ CONTAINS
 		 SHGXY,    SHCXY,    SHBXY,     EVGXY,    EVBXY,     GHVXY, & ! OUT Noah MP only
 		 GHBXY,    IRGXY,    IRCXY,     IRBXY,     TRXY,     EVCXY, & ! OUT Noah MP only
               CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY, RS,                  & ! OUT Noah MP only
+               QINTSXY   ,QINTRXY   ,QDRIPSXY   ,&
+               QDRIPRXY  ,QTHROSXY  ,QTHRORXY   ,&
+               QSNSUBXY  ,QSNFROXY  ,QSUBCXY    ,&
+               QFROCXY   ,QEVACXY   ,QDEWCXY    ,QFRZCXY   ,QMELTCXY   ,&
+               QSNBOTXY  ,PONDINGXY ,PAHXY      ,PAHGXY, PAHVXY, PAHBXY,ICGXY,IGCXY,SCGXY,SGCXY,&
+               FPICEXY,RAINLSM,SNOWLSM,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm,&
+               acc_ssoilxy, acc_qinsurxy, acc_qsevaxy, acc_etranixy, eflxbxy, soilenergy, snowenergy,&
 !                 BEXP_3D,SMCDRY_3D,SMCWLT_3D,SMCREF_3D,SMCMAX_3D,          & ! placeholders to activate 3D soil
 !		 DKSAT_3D,DWSAT_3D,PSISAT_3D,QUARTZ_3D,                     &
 !		 REFDK_2D,REFKDT_2D,                                        &
@@ -262,6 +269,45 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHUCXY    ! under canopy exchange coefficient 
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHV2XY    ! veg 2m exchange coefficient 
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  CHB2XY    ! bare 2m exchange coefficient 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  PAHXY     ! precipitation advected heat 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  PAHGXY    ! precipitation advected heat 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  PAHBXY    ! precipitation advected heat 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  PAHVXY    ! precipitation advected heat 
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QINTSXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QINTRXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QDRIPSXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QDRIPRXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QTHROSXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QTHRORXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QSNSUBXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QSNFROXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QSUBCXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QFROCXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QEVACXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QDEWCXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QFRZCXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QMELTCXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  QSNBOTXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  PONDINGXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: ICGXY    !canopy to ground [w/m2] [+ to atm]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: IGCXY    !ground to canopy [w/m2] [+ to atm]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: SCGXY    !canopy to ground [w/m2] [+ to atm]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: SGCXY    !ground to canopy [w/m2] [+ to atm]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: FPICEXY    !fraction of ice in precip
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: RAINLSM     !rain rate                   (mm/s)  AJN
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: SNOWLSM     !liquid equivalent snow rate (mm/s)  AJN
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: FORCTLSM
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: FORCQLSM
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: FORCPLSM
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: FORCZLSM
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) :: FORCWLSM
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_SSOILXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_QINSURXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ACC_QSEVAXY
+    REAL,    DIMENSION( ims:ime, 1:NSOIL, jms:jme ), INTENT(INOUT) ::  ACC_ETRANIXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  EFLXBXY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  SOILENERGY
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(OUT  ) ::  SNOWENERGY
     INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &  ! d -> domain
          &                           ims,ime, jms,jme, kms,kme,  &  ! m -> memory
          &                           its,ite, jts,jte, kts,kte      ! t -> tile
@@ -402,10 +448,38 @@ CONTAINS
     REAL                                :: CHUC         ! under canopy exchange coefficient 
     REAL                                :: CHV2         ! veg 2m exchange coefficient 
     REAL                                :: CHB2         ! bare 2m exchange coefficient 
+    REAL                                :: QINTS
+    REAL                                :: QINTR
+    REAL                                :: QDRIPS
+    REAL                                :: QDRIPR
+    REAL                                :: QTHROS
+    REAL                                :: QTHROR
+    REAL                                :: QSNSUB
+    REAL                                :: QSNFRO
+    REAL                                :: QEVAC
+    REAL                                :: QDEWC
+    REAL                                :: QSUBC
+    REAL                                :: QFROC
+    REAL                                :: QFRZC
+    REAL                                :: QMELTC
   REAL   :: PAHV    !precipitation advected heat - vegetation net (W/m2)
   REAL   :: PAHG    !precipitation advected heat - under canopy net (W/m2)
   REAL   :: PAHB    !precipitation advected heat - bare ground net (W/m2)
   REAL   :: PAH     !precipitation advected heat - total (W/m2)
+  REAL   :: ICG    !canopy to ground [w/m2] [+ to atm]
+  REAL   :: IGC    !ground to canopy [w/m2] [+ to atm]
+  REAL   :: SCG    !canopy to ground [w/m2] [+ to atm]
+  REAL   :: SGC    !ground to canopy [w/m2] [+ to atm]
+  REAL   :: RAININ     !rain rate                   (mm/s) 
+  REAL   :: SNOWIN     !liquid equivalent snow rate (mm/s) 
+    REAL                        :: ACC_SSOIL
+    REAL                        :: ACC_QINSUR
+    REAL                        :: ACC_QSEVA
+    REAL, DIMENSION( 1:NSOIL)   :: ACC_ETRANI       !transpiration rate (mm/s) [+]
+    REAL                        :: EFLXB
+    REAL                        :: XMF
+    REAL, DIMENSION( -2:NSOIL ) :: HCPCT
+    REAL                        :: DZSNSO
 
 ! Intermediate terms
 

@@ -3061,6 +3061,13 @@ CONTAINS
 		  SHGXY,    SHCXY,    SHBXY,    EVGXY,     EVBXY,      GHVXY, &
 		  GHBXY,    IRGXY,    IRCXY,    IRBXY,      TRXY,      EVCXY, &
 	       CHLEAFXY,   CHUCXY,   CHV2XY,   CHB2XY,    RS,                 &
+               qintsxy   ,qintrxy   ,qdripsxy   ,&
+               qdriprxy  ,qthrosxy  ,qthrorxy   ,&
+               qsnsubxy  ,qsnfroxy  ,qsubcxy    ,&
+               qfrocxy   ,qevacxy   ,qdewcxy    ,qfrzcxy   ,qmeltcxy   ,&
+               qsnbotxy  ,pondingxy ,PAHXY      ,PAHGXY, PAHVXY, PAHBXY,ICGXY,IGCXY,SCGXY,SGCXY,&
+               fpicexy,RAINLSM,SNOWLSM,forctlsm,forcqlsm,forcplsm,forczlsm,forcwlsm,&
+               acc_ssoil, acc_qinsur, acc_qseva, acc_etrani, eflxbxy, soilenergy, snowenergy, &
 #ifdef WRF_HYDRO
                  sfcheadrt,INFXSRT,soldrain,                          &    !O
 #endif
@@ -3134,7 +3141,7 @@ CONTAINS
                                   isltyp,smoiseq,dzs,wtddt,                                 &
                                   fdepthxy,areaxy,ht,isurban,ivgtyp,                         &
                                   rivercondxy,riverbedxy,eqzwt,pexpxy,                      &
-                                  smois,sh2o,smcwtdxy,zwtxy,qrfxy,deeprechxy,qspringxy,     &
+                                  smois,sh2o,smcwtdxy,zwtxy,qlatxy,qrfxy,deeprechxy,qspringxy,     &
                                   qslatxy,qrfsxy,qspringsxy,rechxy,                        &
                                   ids,ide, jds,jde, kds,kde,                             &
                                   ims,ime, jms,jme, kms,kme,                             &
