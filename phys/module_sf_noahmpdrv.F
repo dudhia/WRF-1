@@ -2300,10 +2300,13 @@ EQWTD=WTD
 
 !zero out some arrays
 
+             QLATXY(I,J) = 0.
+             QSLATXY(I,J) = 0.
+             QRFXY(I,J) = 0.
+             QRFSXY(I,J) = 0.
              DEEPRECHXY(I,J) = 0.
              RECHXY(I,J) = 0.
-             QSLATXY(I,J) = 0.
-             QRFSXY(I,J) = 0.
+             QSPRINGXY(I,J) = 0.
              QSPRINGSXY(I,J) = 0.
 
           ENDDO
