@@ -540,6 +540,19 @@ CONTAINS
 
     IPRINT    =  .false.                     ! debug printout
 
+    calculate_soil = .false.
+    soil_update_steps = nint(900./DT)  ! 3600 = 1 hour
+    soil_update_steps = max(soil_update_steps,1)
+    if(soil_update_steps == 1 .or. &
+      (soil_update_steps > 1 .and. mod(itimestep,soil_update_steps) == 1)) then
+      ACC_SSOILXY = 0.0
+      ACC_QINSURXY = 0.0
+      ACC_QSEVAXY = 0.0
+      ACC_ETRANIXY = 0.0
+    end if
+
+    if (mod(itimestep,soil_update_steps) == 0) calculate_soil = .true.
+
     YEARLEN = 365                            ! find length of year for phenology (also S Hemisphere)
     if (mod(YR,4) == 0) then
        YEARLEN = 366
@@ -705,6 +718,10 @@ CONTAINS
        SMCWTD                = SMCWTDXY(I,J)
        RECH                  = 0.
        DEEPRECH              = 0.  
+       ACC_SSOIL             = ACC_SSOILXY (I,J)                 ! surface heat flux
+       ACC_QSEVA             = ACC_QSEVAXY (I,J)
+       ACC_QINSUR            = ACC_QINSURXY (I,J)
+       ACC_ETRANI            = ACC_ETRANIXY (I,:,J)
 
        if(iopt_crop == 2) then   ! gecros crop model
 
@@ -880,11 +897,10 @@ CONTAINS
          GPP    = undefined_value 
          NPP    = undefined_value 
          FVEGMP = 0.0 
-         ECAN   = undefined_value 
-         ETRAN  = undefined_value 
+         ECAN   = 0.0
+         ETRAN  = 0.0
          APAR   = undefined_value 
          PSN    = undefined_value 
-         SAV    = undefined_value 
          RSSUN  = undefined_value 
          RSSHA  = undefined_value 
          RB     = undefined_value
@@ -896,26 +912,52 @@ CONTAINS
          TGV    = undefined_value
          CHV    = undefined_value 
          CHB    = CH 
-         IRC    = undefined_value 
-         IRG    = undefined_value 
-         SHC    = undefined_value 
-         SHG    = undefined_value 
-         EVG    = undefined_value 
-         GHV    = undefined_value 
+         IRC    = 0.0
+         IRG    = 0.0
+         SHC    = 0.0
+         SHG    = 0.0
+         EVG    = 0.0
+         GHV    = 0.0
          IRB    = FIRA
          SHB    = FSH
          EVB    = FGEV
          GHB    = SSOIL
-         TR     = undefined_value 
-         EVC    = undefined_value 
+         TR     = 0.0
+         EVC    = 0.0
+         SAV    = 0.0
+         PAH    = 0.0
+         PAHG   = 0.0
+         PAHB   = 0.0
+         PAHV   = 0.0
          CHLEAF = undefined_value 
          CHUC   = undefined_value 
          CHV2   = undefined_value 
-         FCEV   = undefined_value 
-         FCTR   = undefined_value        
+         FCEV   = 0.0
+         FCTR   = 0.0
          Z0WRF  = 0.002
          QFX(I,J) = ESOIL
          LH (I,J) = FGEV
+         QINTS  = 0.0
+         QINTR  = 0.0
+         QDRIPS = 0.0
+         QDRIPR = 0.0
+         QTHROS = PRCP * FPICE
+         QTHROR = PRCP * (1.0 - FPICE)
+         QSNSUB = MAX( ESOIL, 0.)
+         QSNFRO = ABS( MIN(ESOIL, 0.))
+         QSUBC = 0.0
+         QFROC = 0.0
+         QFRZC = 0.0
+         QMELTC = 0.0
+         QEVAC = 0.0
+         QDEWC = 0.0
+         RAININ = PRCP * (1.0 - FPICE)
+         SNOWIN = PRCP * FPICE
+         CANICE = 0.0
+         CANLIQ = 0.0
+         RUNSF  = RUNSF * DT ! to be consistent with new output from noah-mp
+         RUNSB  = RUNSB * DT ! to be consistent with new output from noah-mp
+
 
 
     ELSE
@@ -951,7 +993,12 @@ CONTAINS
             SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 	    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
 	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , & 
-            PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  , RB        &
+            PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  , RB      , &
+            QINTS   , QINTR   , QDRIPS  , QDRIPR  , QTHROS  , QTHROR  , & ! OUT :
+            QSNSUB  , QSNFRO  , QSUBC   , QFROC   , QFRZC   , QMELTC  , & ! OUT :
+            QEVAC,QDEWC,ICG, IGC, SCG, SGC,RAININ,SNOWIN,   &
+            acc_ssoil, acc_qinsur, acc_qseva, acc_etrani, hcpct, eflxb &
+
 #ifdef WRF_HYDRO
             , sfcheadrt(i,j)                               &
 #endif
@@ -977,8 +1024,8 @@ CONTAINS
              GRDFLX   (I,J)                = SSOIL
 	     SMSTAV   (I,J)                = 0.0  ! [maintained as Noah consistency]
              SMSTOT   (I,J)                = 0.0  ! [maintained as Noah consistency]
-             SFCRUNOFF(I,J)                = SFCRUNOFF(I,J) + RUNSF * DT
-             UDRUNOFF (I,J)                = UDRUNOFF(I,J)  + RUNSB * DT
+             SFCRUNOFF(I,J)                = SFCRUNOFF(I,J) + RUNSF !* DT
+             UDRUNOFF (I,J)                = UDRUNOFF(I,J)  + RUNSB !* DT
              IF ( SALB > -999 ) THEN
                 ALBEDO(I,J)                = SALB
              ENDIF
@@ -1084,9 +1131,60 @@ CONTAINS
              CHUCXY   (I,J)                = CHUC
              CHV2XY   (I,J)                = CHV2
              CHB2XY   (I,J)                = CHB2
+             PAHXY    (I,J)                = PAH
+             PAHGXY   (I,J)                = PAHG
+             PAHBXY   (I,J)                = PAHB
+             PAHVXY   (I,J)                = PAHV
+             QINTSXY  (I,J)                = QINTS
+             QINTRXY  (I,J)                = QINTR
+             QDRIPSXY (I,J)                = QDRIPS
+             QDRIPRXY (I,J)                = QDRIPR
+             QTHROSXY (I,J)                = QTHROS
+             QTHRORXY (I,J)                = QTHROR
+             QSNSUBXY (I,J)                = QSNSUB
+             QSNFROXY (I,J)                = QSNFRO
+             QSUBCXY  (I,J)                = QSUBC
+             QFROCXY  (I,J)                = QFROC
+             QEVACXY  (I,J)                = QEVAC
+             QDEWCXY  (I,J)                = QDEWC
+             QFRZCXY  (I,J)                = QFRZC
+             QMELTCXY (I,J)                = QMELTC
+             QSNBOTXY (I,J)                = QSNBOT
+             PONDINGXY (I,J)               = PONDING + PONDING1 + PONDING2
+             ICGXY    (I,J)                = ICG
+             IGCXY    (I,J)                = IGC
+             SCGXY    (I,J)                = SCG
+             SGCXY    (I,J)                = SGC
+             FPICEXY  (I,J)                = FPICE
+             RAINLSM  (I,J)                = RAININ
+             SNOWLSM  (I,J)                = SNOWIN
+             FORCTLSM (I,J)                = T_ML
+             FORCQLSM (I,J)                = Q_ML
+             FORCPLSM (I,J)                = P_ML
+             FORCZLSM (I,J)                = Z_ML
+             FORCWLSM (I,J)                = SQRT(U_ML*U_ML + V_ML*V_ML)
              RECHXY   (I,J)                = RECHXY(I,J) + RECH*1.E3 !RECHARGE TO THE WATER TABLE
              DEEPRECHXY(I,J)               = DEEPRECHXY(I,J) + DEEPRECH
              SMCWTDXY(I,J)                 = SMCWTD
+             ACC_SSOILXY  (I,J)            = ACC_SSOIL
+             ACC_QINSURXY (I,J)            = ACC_QINSUR
+             ACC_QSEVAXY  (I,J)            = ACC_QSEVA
+             ACC_ETRANIXY (I,:,J)          = ACC_ETRANI
+             EFLXBXY (I,J)                 = EFLXB
+             SNOWENERGY(I,J)               = 0.0
+             SOILENERGY(I,J)               = 0.0
+             DO K = ISNOW+1, NSOIL
+               IF(K == ISNOW+1) THEN
+                 DZSNSO = - ZSNSO(K)
+               ELSE
+                 DZSNSO = ZSNSO(K-1) - ZSNSO(K)
+               END IF
+               IF(K >= 1) THEN
+                 SOILENERGY(I,J) = SOILENERGY(I,J) + DZSNSO * HCPCT(K) * (STC(K)-273.16) * 0.001
+               ELSE
+                 SNOWENERGY(I,J) = SNOWENERGY(I,J) + DZSNSO * HCPCT(K) * (STC(K)-273.16) * 0.001
+               END IF
+             ENDDO
 
              GRAINXY  (I,J) = GRAIN !GRAIN XING
              GDDXY    (I,J) = GDD   !XING 
@@ -1510,7 +1608,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
          &                           CANWAT
 
     INTEGER, DIMENSION( ims:ime, jms:jme ),                      &
-         &   INTENT(IN)       ::     ISLTYP,  &
+         &   INTENT(INOUT)       ::     ISLTYP,  &
                                      IVGTYP
 
     LOGICAL, INTENT(IN)       ::     FNDSOILW,                   &
@@ -1690,6 +1788,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                 SNOWH(I,J)=SNOW(I,J)*0.01               ! SNOW in mm and SNOWH in m
 	    ELSE
 	      
+              if(ISLTYP(I,J)==1) ISLTYP(I,J)=2
               BEXP   =   BEXP_TABLE(ISLTYP(I,J))
               SMCMAX = SMCMAX_TABLE(ISLTYP(I,J))
               PSISAT = PSISAT_TABLE(ISLTYP(I,J))

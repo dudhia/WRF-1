@@ -198,6 +198,9 @@ MODULE MODULE_SF_NOAHMPLSM
   INTEGER, PRIVATE, PARAMETER :: NSOIL = 4
   INTEGER, PRIVATE, PARAMETER :: NSTAGE = 8
 
+  logical :: calculate_soil
+  integer :: soil_update_steps
+
   TYPE noahmp_parameters ! define a NoahMP parameters type
 
 !------------------------------------------------------------------------------------------!
@@ -413,7 +416,11 @@ contains
 		   SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 		   GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
 		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , &
-                   PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  , RB        & ! OUT
+                   PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  , RB      , & ! OUT
+                   QINTS   , QINTR   , QDRIPS  , QDRIPR  , QTHROS  , QTHROR  , & ! OUT :
+                   QSNSUB  , QSNFRO  , QSUBC   , QFROC   , QFRZC   , QMELTC  , & ! OUT :
+                   QEVAC,QDEWC,ICG, IGC, SCG, SGC,RAIN,SNOW, &
+                   acc_ssoil, acc_qinsur, acc_qseva, acc_etrani, hcpct, eflxb &
 #ifdef WRF_HYDRO
                    ,SFCHEADRT                                                  & ! IN/OUT :
 #endif
@@ -507,6 +514,12 @@ contains
   REAL,                            INTENT(INOUT) :: SMCWTD !soil water content between bottom of the soil and water table [m3/m3]
   REAL,                            INTENT(INOUT) :: DEEPRECH !recharge to or from the water table when deep [m]
   REAL,                            INTENT(INOUT) :: RECH !recharge to or from the water table when shallow [m] (diagnostic)
+  REAL                           , INTENT(INOUT) :: ACC_SSOIL  !ground heat flux (w/m2)   [+ to soil]
+  REAL                           , INTENT(INOUT) :: ACC_QINSUR  !water input on soil surface [m/s]
+  REAL                           , INTENT(INOUT) :: ACC_QSEVA   !soil surface evap rate [mm/s]
+  REAL, DIMENSION(       1:NSOIL), INTENT(INOUT) :: ACC_ETRANI  !transpiration rate (mm/s) [+]
+  REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(  OUT) :: HCPCT  !heat capacity [j/m3/k]
+  REAL                           , INTENT(  OUT) :: EFLXB !energy influx from soil bottom (w/m2)
 
   REAL, DIMENSION(1:60)          , INTENT(INOUT) :: gecros1d !  gecros crop
   
@@ -612,6 +625,24 @@ contains
   REAL, INTENT(OUT)   :: PAHG    !precipitation advected heat - under canopy net (W/m2)
   REAL, INTENT(OUT)   :: PAHB    !precipitation advected heat - bare ground net (W/m2)
   REAL, INTENT(OUT)                                           :: PAH     !precipitation advected heat - total (W/m2)
+  REAL, INTENT(OUT)   :: QINTS
+  REAL, INTENT(OUT)   :: QINTR
+  REAL, INTENT(OUT)   :: QDRIPS
+  REAL, INTENT(OUT)   :: QDRIPR
+  REAL, INTENT(OUT)   :: QTHROS
+  REAL, INTENT(OUT)   :: QTHROR
+  REAL, INTENT(OUT)   :: QSNSUB
+  REAL, INTENT(OUT)   :: QSNFRO
+  REAL, INTENT(OUT)   :: QSUBC
+  REAL, INTENT(OUT)   :: QFROC
+  REAL, INTENT(OUT)   :: QFRZC
+  REAL, INTENT(OUT)   :: QMELTC
+  REAL, INTENT(OUT)   :: QEVAC
+  REAL, INTENT(OUT)   :: QDEWC
+  REAL                              , INTENT(OUT)   :: ICG    !canopy to ground [w/m2] [+ to atm]
+  REAL                              , INTENT(OUT)   :: IGC    !ground to canopy [w/m2] [+ to atm]
+  REAL                              , INTENT(OUT)   :: SCG    !canopy to ground [w/m2] [+ to atm]
+  REAL                              , INTENT(OUT)   :: SGC    !ground to canopy [w/m2] [+ to atm]
 
 !jref:start 
   REAL                                           :: FSRV
@@ -659,12 +690,12 @@ contains
   REAL                                           :: FP                                            ! MB/AN: v3.7
   REAL                                           :: PRCP                                          ! MB/AN: v3.7
 !more local variables for precip heat MB
-  REAL                                           :: QINTR   !interception rate for rain (mm/s)
-  REAL                                           :: QDRIPR  !drip rate for rain (mm/s)
-  REAL                                           :: QTHROR  !throughfall for rain (mm/s)
-  REAL                                           :: QINTS   !interception (loading) rate for snowfall (mm/s)
-  REAL                                           :: QDRIPS  !drip (unloading) rate for intercepted snow (mm/s)
-  REAL                                           :: QTHROS  !throughfall of snowfall (mm/s)
+!  REAL                                           :: QINTR   !interception rate for rain (mm/s)
+!  REAL                                           :: QDRIPR  !drip rate for rain (mm/s)
+!  REAL                                           :: QTHROR  !throughfall for rain (mm/s)
+!  REAL                                           :: QINTS   !interception (loading) rate for snowfall (mm/s)
+!  REAL                                           :: QDRIPS  !drip (unloading) rate for intercepted snow (mm/s)
+!  REAL                                           :: QTHROS  !throughfall of snowfall (mm/s)
   REAL                                           :: QRAIN   !rain at ground srf (mm/s) [+]
   REAL                                           :: SNOWHIN !snow depth increasing rate (m/s)
   REAL                                 :: LATHEAV !latent heat vap./sublimation (j/kg)
