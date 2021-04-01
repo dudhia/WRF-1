@@ -2018,8 +2018,9 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
     SUBROUTINE GROUNDWATER_INIT (   &
             &            GRID, NSOIL , DZS, ISLTYP, IVGTYP, WTDDT , &
             &            FDEPTH, TOPO, RIVERBED, EQWTD, RIVERCOND, PEXP , AREA ,WTD ,  &
-            &            SMOIS,SH2O, SMOISEQ, SMCWTDXY, DEEPRECHXY, RECHXY ,  &
-            &            QSLATXY, QRFSXY, QSPRINGSXY,                  &
+            &            SMOIS,SH2O, SMOISEQ, SMCWTDXY,  &
+            &            QLATXY, QSLATXY, QRFXY, QRFSXY, &
+            &            DEEPRECHXY, RECHXY , QSPRINGXY, QSPRINGSXY, &
             &            rechclim  ,                                   &
             &            ids,ide, jds,jde, kds,kde,                    &
             &            ims,ime, jms,jme, kms,kme,                    &
@@ -2061,11 +2062,14 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
          &                                                 SMOISEQ
     REAL,    INTENT(INOUT), DIMENSION(ims:ime, jms:jme) ::  &
                                                            SMCWTDXY, &
+                                                           QLATXY, &
+                                                           QSLATXY, &
+                                                           QRFXY, &
+                                                           QRFSXY, &
                                                            DEEPRECHXY, &
                                                            RECHXY, &
-                                                           QSLATXY, &
-                                                           QRFSXY, &
-                                                           QSPRINGSXY  
+                                                           QSPRINGXY , &
+                                                           QSPRINGSXY
 ! local
     INTEGER  :: I,J,K,ITER,itf,jtf, NITER, NCOUNT,NS
     REAL :: BEXP,SMCMAX,PSISAT,SMCWLT,DWSAT,DKSAT
