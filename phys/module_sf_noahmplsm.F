@@ -813,6 +813,7 @@ contains
                  Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV   ,CHB     , & !out
                  EMISSI ,PAH    ,                                 &
 		 SHG,SHC,SHB,EVG,EVB,GHV,GHB,IRG,IRC,IRB,TR,EVC,CHLEAF,CHUC,CHV2,CHB2,&
+                 EFLXB, HCPCT, ACC_SSOIL, &
                  JULIAN, SWDOWN, PRCP, FB, GECROS1D )        
 !jref:end
 
@@ -837,7 +838,9 @@ contains
                  SMCWTD ,DEEPRECH,RECH                          , & !inout
                  CMC    ,ECAN   ,ETRAN  ,FWET   ,RUNSRF ,RUNSUB , & !out
                  QIN    ,QDIS   ,PONDING1       ,PONDING2,&
-                 QSNBOT                             &
+                 QSNBOT ,                           &
+                 QSNSUB ,QSNFRO ,QSUBC  ,QFROC  ,QFRZC   ,QMELTC, QEVAC, QDEWC, &
+                 ACC_QINSUR ,ACC_QSEVA  ,ACC_ETRANI                  &
 #ifdef WRF_HYDRO
                         ,sfcheadrt                     &
 #endif
@@ -876,13 +879,13 @@ contains
    
 ! water and energy balance check
 
-     CALL ERROR (parameters,SWDOWN ,FSA    ,FSR    ,FIRA   ,FSH    ,FCEV   , & !in
-                 FGEV   ,FCTR   ,SSOIL  ,BEG_WB ,CANLIQ ,CANICE , & !in
-                 SNEQV  ,WA     ,SMC    ,DZSNSO ,PRCP   ,ECAN   , & !in
-                 ETRAN  ,EDIR   ,RUNSRF ,RUNSUB ,DT     ,NSOIL  , & !in
-                 NSNOW  ,IST    ,ERRWAT ,ILOC   , JLOC  ,FVEG   , &
-                 SAV    ,SAG    ,FSRV   ,FSRG   ,ZWT    ,PAH    , &
-                 PAHV   ,PAHG   ,PAHB   )   !in ( Except ERRWAT, which is out )
+!    CALL ERROR (parameters,SWDOWN ,FSA    ,FSR    ,FIRA   ,FSH    ,FCEV   , & !in
+!                FGEV   ,FCTR   ,SSOIL  ,BEG_WB ,CANLIQ ,CANICE , & !in
+!                SNEQV  ,WA     ,SMC    ,DZSNSO ,PRCP   ,ECAN   , & !in
+!                ETRAN  ,EDIR   ,RUNSRF ,RUNSUB ,DT     ,NSOIL  , & !in
+!                NSNOW  ,IST    ,ERRWAT ,ILOC   , JLOC  ,FVEG   , &
+!                SAV    ,SAG    ,FSRV   ,FSRG   ,ZWT    ,PAH    , &
+!                PAHV   ,PAHG   ,PAHB   )   !in ( Except ERRWAT, which is out )
 
 ! urban - jref
     QFX = ETRAN + ECAN + EDIR
@@ -891,7 +894,7 @@ contains
        Q2B = QSFC
     END IF
 
-    IF(SNOWH <= 1.E-6 .OR. SNEQV <= 1.E-3) THEN
+    IF(SNOWH <= 1.E-6 .OR. SNEQV <= 1.E-6) THEN
      SNOWH = 0.0
      SNEQV = 0.0
     END IF
@@ -1564,6 +1567,7 @@ ENDIF   ! CROPTYPE == 0
                      FSRG   ,RSSUN  ,RSSHA  ,ALBSND  ,ALBSNI,BGAP   ,WGAP,TGV,TGB,&
                      Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV  ,CHB, EMISSI,PAH  ,&
 		     SHG,SHC,SHB,EVG,EVB,GHV,GHB,IRG,IRC,IRB,TR,EVC,CHLEAF,CHUC,CHV2,CHB2, &
+                     EFLXB, HCPCT, ACC_SSOIL, &
                      JULIAN, SWDOWN, PRCP, FB, GECROS1D )        
 !jref:end                            
 
@@ -1688,6 +1692,9 @@ ENDIF   ! CROPTYPE == 0
   REAL                              , INTENT(OUT)   :: LATHEAG !latent heat vap./sublimation (j/kg)
   LOGICAL                           , INTENT(OUT)   :: FROZEN_GROUND ! used to define latent heat pathway
   LOGICAL                           , INTENT(OUT)   :: FROZEN_CANOPY ! used to define latent heat pathway
+  REAL, DIMENSION(-NSNOW+1:NSOIL)   , INTENT(OUT)   :: HCPCT  !heat capacity [j/m3/k]
+  REAL                              , INTENT(OUT)   :: EFLXB  !energy influx from soil bottom (w/m2)
+  REAL                              , INTENT(INOUT) :: ACC_SSOIL  !energy influx from soil bottom (w/m2)
 
 !jref:start  
   REAL                              , INTENT(OUT)   :: FSRV    !veg. reflected solar radiation (w/m2)
@@ -1764,7 +1771,7 @@ ENDIF   ! CROPTYPE == 0
 
   REAL, DIMENSION(-NSNOW+1:NSOIL)                   :: FACT   !temporary used in phase change
   REAL, DIMENSION(-NSNOW+1:NSOIL)                   :: DF     !thermal conductivity [w/m/k]
-  REAL, DIMENSION(-NSNOW+1:NSOIL)                   :: HCPCT  !heat capacity [j/m3/k]
+! REAL, DIMENSION(-NSNOW+1:NSOIL)                   :: HCPCT  !heat capacity [j/m3/k]
   REAL                                              :: BDSNO  !bulk density of snow (kg/m3)
   REAL                                              :: FMELT  !melting factor for snow cover frac
   REAL                                              :: GX     !temporary variable
@@ -1814,6 +1821,9 @@ ENDIF   ! CROPTYPE == 0
   REAL,INTENT(OUT)                                  :: CHB2    !sensible heat conductance, canopy air to ZLVL air (m/s)
   REAL                                  :: noahmpres
 
+  real :: dt_soil
+  real :: ssoil_avg
+
   REAL,                INTENT(IN)    :: JULIAN, SWDOWN, PRCP, FB
   REAL,DIMENSION(1:60),INTENT(INOUT) :: GECROS1D
 
@@ -1821,7 +1831,7 @@ ENDIF   ! CROPTYPE == 0
 
   REAL, PARAMETER                   :: MPE    = 1.E-6
   REAL, PARAMETER                   :: PSIWLT = -150.  !metric potential for wilting point (m)
-  REAL, PARAMETER                   :: Z0     = 0.002  ! Bare-soil roughness length (m) (i.e., under the canopy)
+  REAL, PARAMETER                   :: Z0     = 0.004  ! Bare-soil roughness length (m) (i.e., under the canopy)
 
 ! ---------------------------------------------------------------------------------------------------
 ! initialize fluxes from veg. fraction
@@ -2145,11 +2155,22 @@ ENDIF   ! CROPTYPE == 0
 
 ! 3L snow & 4L soil temperatures
 
+    eflxb = 0.0
+    acc_ssoil = acc_ssoil + ssoil
+
+    if(calculate_soil) then
+
+    ssoil_avg = acc_ssoil / soil_update_steps
+    dt_soil = dt*soil_update_steps
+
     CALL TSNOSOI (parameters,ICE     ,NSOIL   ,NSNOW   ,ISNOW   ,IST     , & !in
-                  TBOT    ,ZSNSO   ,SSOIL   ,DF      ,HCPCT   , & !in
-                  SAG     ,DT      ,SNOWH   ,DZSNSO  , & !in
+                  TBOT    ,ZSNSO   ,SSOIL_avg   ,DF      ,HCPCT   , & !in
+                  SAG     ,DT_soil      ,SNOWH   ,DZSNSO  , & !in
                   TG      ,ILOC    ,JLOC    ,                   & !in
-                  STC     )                                       !inout
+                  STC     ,EFLXB)                                       !inout
+    EFLXB = EFLXB * dt_soil
+
+    end if
 
 ! adjusting snow surface temperature
      IF(OPT_STC == 2) THEN
@@ -2224,6 +2245,9 @@ ENDIF   ! CROPTYPE == 0
   REAL, DIMENSION(-NSNOW+1:    0)              :: TKSNO   !snow thermal conductivity (j/m3/k)
   REAL, DIMENSION(       1:NSOIL)              :: SICE    !soil ice content
 ! --------------------------------------------------------------------------------------------------
+
+HCPCT = 0.0
+DF = 0.0
 
 ! compute snow thermal conductivity and heat capacity
 
@@ -4365,6 +4389,7 @@ ENDIF   ! CROPTYPE == 0
        TMPRB  = CWPC*50. / (1. - EXP(-CWPC/2.))
        RB     = TMPRB * SQRT(parameters%DLEAF/UC)
        RB     = MAX(RB,100.0)
+       rb = max(rb,20.0)
 !       RB = 200
 
   END SUBROUTINE RAGRB
@@ -5046,7 +5071,7 @@ ENDIF   ! CROPTYPE == 0
                       TBOT    ,ZSNSO   ,SSOIL   ,DF      ,HCPCT   , & !in
                       SAG     ,DT      ,SNOWH   ,DZSNSO  , & !in
                       TG      ,ILOC    ,JLOC    ,                   & !in
-                      STC     )                                       !inout
+                      STC     ,EFLXB)                                       !inout
 ! --------------------------------------------------------------------------------------------------
 ! Compute snow (up to 3L) and soil (4L) temperature. Note that snow temperatures
 ! during melting season may exceed melting point (TFRZ) but later in PHASECHANGE
@@ -5075,6 +5100,7 @@ ENDIF   ! CROPTYPE == 0
     REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(IN)  :: DZSNSO !snow/soil layer thickness (m)
     REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(IN)  :: DF     !thermal conductivity
     REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(IN)  :: HCPCT  !heat capacity (J/m3/k)
+    REAL,                            INTENT(OUT) :: EFLXB !energy influx from soil bottom (w/m2)
 
 !input and output
 
@@ -5085,7 +5111,6 @@ ENDIF   ! CROPTYPE == 0
     INTEGER                                      :: IZ
     REAL                                         :: ZBOTSNO   !ZBOT from snow surface
     REAL, DIMENSION(-NSNOW+1:NSOIL)              :: AI, BI, CI, RHSTS
-    REAL                                         :: EFLXB !energy influx from soil bottom (w/m2)
     REAL, DIMENSION(-NSNOW+1:NSOIL)              :: PHI   !light through water (w/m2)
 
     REAL, DIMENSION(-NSNOW+1:NSOIL) :: TBEG
@@ -5525,6 +5550,7 @@ ENDIF   ! CROPTYPE == 0
         SNEQV  = MAX(0.,TEMP1-XM(1))  
         PROPOR = SNEQV/TEMP1
         SNOWH  = MAX(0.,PROPOR * SNOWH)
+        SNOWH  = MIN(MAX(SNOWH,SNEQV/500.0),SNEQV/50.0)  ! limit adjustment to a reasonable density
         HEATR  = HM(1) - HFUS*(TEMP1-SNEQV)/DT  
         IF (HEATR > 0.) THEN
               XM(1) = HEATR*DT/HFUS             
@@ -5749,7 +5775,9 @@ ENDIF   ! CROPTYPE == 0
                     SMCWTD ,DEEPRECH,RECH                          , & !inout
                     CMC    ,ECAN   ,ETRAN  ,FWET   ,RUNSRF ,RUNSUB , & !out
                     QIN    ,QDIS   ,PONDING1       ,PONDING2,        &
-                    QSNBOT                                           &
+                    QSNBOT ,                                         &
+                    QSNSUB ,QSNFRO ,QSUBC  ,QFROC  ,QFRZC   ,QMELTC, QEVAC, QDEWC, &
+                    ACC_QINSUR ,ACC_QSEVA  ,ACC_ETRANI &
 #ifdef WRF_HYDRO
                         ,sfcheadrt                     &
 #endif
@@ -5851,8 +5879,23 @@ ENDIF   ! CROPTYPE == 0
   REAL                                           :: QDRAIN  !soil-bottom free drainage [mm/s] 
   REAL                                           :: SNOFLOW !glacier flow [mm/s]
   REAL                                           :: FCRMAX !maximum of FCR (-)
+  REAL, INTENT(OUT)                :: QEVAC   !evaporation rate (mm/s)
+  REAL, INTENT(OUT)                :: QDEWC   !dew rate (mm/s)
+  REAL, INTENT(OUT)                :: QFROC   !frost rate (mm/s)
+  REAL, INTENT(OUT)                :: QSUBC   !sublimation rate (mm/s)
+  REAL, INTENT(OUT)                :: QMELTC  !melting rate of canopy snow (mm/s)
+  REAL, INTENT(OUT)                :: QFRZC   !refreezing rate of canopy liquid water (mm/s)
+
+  REAL, INTENT(INOUT)                            :: ACC_QINSUR  !water input on soil surface [m/s]
+  REAL, INTENT(INOUT)                            :: ACC_QSEVA   !soil surface evap rate [mm/s]
+  REAL, DIMENSION(       1:NSOIL) , INTENT(INOUT):: ACC_ETRANI  !transpiration rate (mm/s) [+]
 
   REAL, PARAMETER ::  WSLMAX = 5000.      !maximum lake water storage (mm)
+
+  real                     :: dt_soil
+  real                     :: qinsur_avg
+  real                     :: qseva_avg
+  real, dimension(1:nsoil) :: etrani_avg
 
 #ifdef WRF_HYDRO
   REAL                           , INTENT(INOUT)    :: sfcheadrt
@@ -5863,6 +5906,7 @@ ENDIF   ! CROPTYPE == 0
 
    ETRANI(1:NSOIL) = 0.
    SNOFLOW         = 0.
+   RUNSRF          = 0.
    RUNSUB          = 0.
    QINSUR          = 0.
 
@@ -5874,7 +5918,7 @@ ENDIF   ! CROPTYPE == 0
                   BDFALL ,FROZEN_CANOPY  , & !in     
                   CANLIQ ,CANICE ,TV     ,                 & !inout
                   CMC    ,ECAN   ,ETRAN  , & !out
-                  FWET      )                           !out
+                  FWET, QSUBC, QFROC, QFRZC, QMELTC, QEVAC, QDEWC      )                           !out
 
 ! sublimation, frost, evaporation, and dew
 
@@ -5905,6 +5949,7 @@ ENDIF   ! CROPTYPE == 0
          SH2O(1) = SH2O(1) + SICE(1)
          SICE(1) = 0.
       END IF
+      SMC(1) = SH2O(1) + SICE(1)
    END IF
 
 ! convert units (mm/s -> m/s)
@@ -5929,6 +5974,17 @@ ENDIF   ! CROPTYPE == 0
        QINSUR = QINSUR+sfcheadrt/DT*0.001  !sfcheadrt units (m)
 #endif
 
+acc_qinsur = acc_qinsur + qinsur
+acc_qseva  = acc_qseva  + qseva
+acc_etrani = acc_etrani + etrani
+
+    if(calculate_soil) then
+
+    dt_soil = dt*soil_update_steps
+    qseva_avg  = acc_qseva / soil_update_steps
+    qinsur_avg = acc_qinsur / soil_update_steps
+    etrani_avg = acc_etrani / soil_update_steps
+
 ! lake/soil water balances
 
     IF (IST == 2) THEN                                        ! lake
@@ -5936,14 +5992,14 @@ ENDIF   ! CROPTYPE == 0
        IF(WSLAKE >= WSLMAX) RUNSRF = QINSUR*1000.             !mm/s
        WSLAKE = WSLAKE + (QINSUR-QSEVA)*1000.*DT -RUNSRF*DT   !mm
     ELSE                                                      ! soil
-       CALL      SOILWATER (parameters,NSOIL  ,NSNOW  ,DT     ,ZSOIL  ,DZSNSO , & !in
-                            QINSUR ,QSEVA  ,ETRANI ,SICE   ,ILOC   , JLOC , & !in
+       CALL      SOILWATER (parameters,NSOIL  ,NSNOW  ,DT_soil     ,ZSOIL  ,DZSNSO , & !in
+                            QINSUR_avg ,QSEVA_avg  ,ETRANI_avg ,SICE   ,ILOC   , JLOC , & !in
                             SH2O   ,SMC    ,ZWT    ,VEGTYP , & !inout
                            SMCWTD, DEEPRECH                       , & !inout
                             RUNSRF ,QDRAIN ,RUNSUB ,WCND   ,FCRMAX )   !out
  
        IF(OPT_RUN == 1) THEN 
-          CALL GROUNDWATER (parameters,NSNOW  ,NSOIL  ,DT     ,SICE   ,ZSOIL  , & !in
+          CALL GROUNDWATER (parameters,NSNOW  ,NSOIL  ,DT_soil     ,SICE   ,ZSOIL  , & !in
                             STC    ,WCND   ,FCRMAX ,ILOC   ,JLOC   , & !in
                             SH2O   ,ZWT    ,WA     ,WT     ,         & !inout
                             QIN    ,QDIS   )                           !out
@@ -5959,7 +6015,7 @@ ENDIF   ! CROPTYPE == 0
        ENDDO
  
        IF(OPT_RUN == 5) THEN
-          CALL SHALLOWWATERTABLE (parameters,NSNOW  ,NSOIL, ZSOIL, DT       , & !in
+          CALL SHALLOWWATERTABLE (parameters,NSNOW  ,NSOIL, ZSOIL, DT_soil       , & !in
                          DZSNSO ,SMCEQ   ,ILOC , JLOC        , & !in
                          SMC    ,ZWT    ,SMCWTD ,RECH, QDRAIN  ) !inout
 
@@ -5968,9 +6024,13 @@ ENDIF   ! CROPTYPE == 0
           WA = 0.
        ENDIF
 
-    ENDIF
+    RUNSRF = RUNSRF * dt_soil
+    RUNSUB = RUNSUB * dt_soil
 
-    RUNSUB       = RUNSUB + SNOFLOW         !mm/s
+    ENDIF
+    end if
+
+    RUNSUB       = RUNSUB + SNOFLOW*DT         !mm/s
 
   END SUBROUTINE WATER
 
@@ -5982,7 +6042,7 @@ ENDIF   ! CROPTYPE == 0
                        BDFALL ,FROZEN_CANOPY  ,  & !in      
                        CANLIQ ,CANICE ,TV     ,                 & !inout
                        CMC    ,ECAN   ,ETRAN  , & !out
-                       FWET      )                           !out
+                       FWET, QSUBC, QFROC, QFRZC, QMELTC, QEVAC, QDEWC      )                           !out
 
 ! ------------------------ code history ------------------------------
 ! canopy hydrology
@@ -6019,12 +6079,12 @@ ENDIF   ! CROPTYPE == 0
 ! ------------------------ local variables ---------------------------
   REAL                :: MAXSNO  !canopy capacity for snow interception (mm)
   REAL                :: MAXLIQ  !canopy capacity for rain interception (mm)
-  REAL                :: QEVAC   !evaporation rate (mm/s)
-  REAL                :: QDEWC   !dew rate (mm/s)
-  REAL                :: QFROC   !frost rate (mm/s)
-  REAL                :: QSUBC   !sublimation rate (mm/s)
-  REAL                :: QMELTC  !melting rate of canopy snow (mm/s)
-  REAL                :: QFRZC   !refreezing rate of canopy liquid water (mm/s)
+  REAL, INTENT(OUT)                :: QEVAC   !evaporation rate (mm/s)
+  REAL, INTENT(OUT)                :: QDEWC   !dew rate (mm/s)
+  REAL, INTENT(OUT)                :: QFROC   !frost rate (mm/s)
+  REAL, INTENT(OUT)                :: QSUBC   !sublimation rate (mm/s)
+  REAL, INTENT(OUT)                :: QMELTC  !melting rate of canopy snow (mm/s)
+  REAL, INTENT(OUT)                :: QFRZC   !refreezing rate of canopy liquid water (mm/s)
   REAL                :: CANMAS  !total canopy mass (kg/m2)
 ! --------------------------------------------------------------------
 ! initialization
@@ -6070,7 +6130,7 @@ ENDIF   ! CROPTYPE == 0
      
 ! wetted fraction of canopy
 
-      IF(CANICE.GT.0.) THEN
+      IF(CANICE.GT.0..AND.CANICE.GE.CANLIQ) THEN
            FWET = MAX(0.,CANICE) / MAX(MAXSNO,1.E-06)
       ELSE
            FWET = MAX(0.,CANLIQ) / MAX(MAXLIQ,1.E-06)
@@ -6082,17 +6142,19 @@ ENDIF   ! CROPTYPE == 0
       QMELTC = 0.
       QFRZC = 0.
 
+      CMC = CANLIQ + CANICE
+
       IF(CANICE.GT.1.E-6.AND.TV.GT.TFRZ) THEN
          QMELTC = MIN(CANICE/DT,(TV-TFRZ)*CICE*CANICE/DENICE/(DT*HFUS))
          CANICE = MAX(0.,CANICE - QMELTC*DT)
-         CANLIQ = MAX(0.,CANLIQ + QMELTC*DT)
+         CANLIQ = MAX(0.,CMC - CANICE)
          TV     = FWET*TFRZ + (1.-FWET)*TV
       ENDIF
 
       IF(CANLIQ.GT.1.E-6.AND.TV.LT.TFRZ) THEN
          QFRZC  = MIN(CANLIQ/DT,(TFRZ-TV)*CWAT*CANLIQ/DENH2O/(DT*HFUS))
          CANLIQ = MAX(0.,CANLIQ - QFRZC*DT)
-         CANICE = MAX(0.,CANICE + QFRZC*DT)
+         CANICE = MAX(0.,CMC - CANLIQ)
          TV     = FWET*TFRZ + (1.-FWET)*TV
       ENDIF
 
@@ -6361,10 +6423,12 @@ ENDIF   ! CROPTYPE == 0
              IF(J /= 0) THEN
                 SNLIQ(J+1) = SNLIQ(J+1) + SNLIQ(J)
                 SNICE(J+1) = SNICE(J+1) + SNICE(J)
+                DZSNSO(J+1) = DZSNSO(J+1) + DZSNSO(J)
              ELSE
                IF (ISNOW_OLD < -1) THEN    ! MB/KM: change to ISNOW
                 SNLIQ(J-1) = SNLIQ(J-1) + SNLIQ(J)
                 SNICE(J-1) = SNICE(J-1) + SNICE(J)
+                DZSNSO(J-1) = DZSNSO(J-1) + DZSNSO(J)
                ELSE
 	         IF(SNICE(J) >= 0.) THEN
                   PONDING1 = SNLIQ(J)    ! ISNOW WILL GET SET TO ZERO BELOW; PONDING1 WILL GET 
@@ -6772,6 +6836,7 @@ ENDIF   ! CROPTYPE == 0
            ! The change in DZ due to compaction
 
            DZSNSO(J) = DZSNSO(J)*(1.+PDZDTC)
+           DZSNSO(J) = max(DZSNSO(J),SNICE(J)/DENICE + SNLIQ(J)/DENH2O)
         END IF
 
         ! Pressure of overlying snow
@@ -6856,6 +6921,7 @@ ENDIF   ! CROPTYPE == 0
       SNEQV  = SNEQV - QSNSUB*DT + QSNFRO*DT
       PROPOR = SNEQV/TEMP
       SNOWH  = MAX(0.,PROPOR * SNOWH)
+      SNOWH  = MIN(MAX(SNOWH,SNEQV/500.0),SNEQV/50.0)  ! limit adjustment to a reasonable density
 
       IF(SNEQV < 0.) THEN
          SICE(1) = SICE(1) + SNEQV/(DZSNSO(1)*1000.)
@@ -6910,6 +6976,10 @@ ENDIF   ! CROPTYPE == 0
      QOUT = QOUT*DENH2O
      SNLIQ(J) = SNLIQ(J) - QOUT
      QIN = QOUT
+   END DO
+
+   DO J = ISNOW+1, 0
+     DZSNSO(J) = MAX(DZSNSO(J),SNLIQ(J)/DENH2O + SNICE(J)/DENICE)
    END DO
 
 ! Liquid water from snow bottom to soil
@@ -7093,12 +7163,13 @@ ENDIF   ! CROPTYPE == 0
 
     NITER = 1
 
-!    IF(OPT_INF == 1) THEN    !OPT_INF =2 may cause water imbalance
+
+    IF(PDDUM > 0.0 .and. OPT_INF == 1) THEN    !OPT_INF =2 may cause water imbalance
        NITER = 3
        IF (PDDUM*DT>DZSNSO(1)*parameters%SMCMAX(1) ) THEN
           NITER = NITER*2
        END IF
-!    END IF                 
+    END IF                 
 
     DTFINE  = DT / NITER
 
