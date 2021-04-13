@@ -1608,7 +1608,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
          &                           CANWAT
 
     INTEGER, DIMENSION( ims:ime, jms:jme ),                      &
-         &   INTENT(INOUT)       ::     ISLTYP,  &
+         &   INTENT(IN)       ::     ISLTYP,  &
                                      IVGTYP
 
     LOGICAL, INTENT(IN)       ::     FNDSOILW,                   &
@@ -1788,7 +1788,6 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                 SNOWH(I,J)=SNOW(I,J)*0.01               ! SNOW in mm and SNOWH in m
 	    ELSE
 	      
-              if(ISLTYP(I,J)==1) ISLTYP(I,J)=2
               BEXP   =   BEXP_TABLE(ISLTYP(I,J))
               SMCMAX = SMCMAX_TABLE(ISLTYP(I,J))
               PSISAT = PSISAT_TABLE(ISLTYP(I,J))
