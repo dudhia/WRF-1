@@ -15246,6 +15246,7 @@ integer,external :: omp_get_thread_num
 !------------------------------------------------------------------
       SUBROUTINE RRTMG_LWRAD_FAST(                                &
                        rthratenlw,                                &
+                       rthratenlwc,                               &
                        lwupt, lwuptc, lwdnt, lwdntc,              &
                        lwupb, lwupbc, lwdnb, lwdnbc,              &
 !                      lwupflx, lwupflxc, lwdnflx, lwdnflxc,      &
@@ -15304,8 +15305,8 @@ integer,external :: omp_get_thread_num
                                                            rho3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         INTENT(INOUT)  ::                            RTHRATENLW
-
+         INTENT(INOUT)  ::                            RTHRATENLW, &
+                                                      RTHRATENLWC
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GLW, &
                                                              OLR, &
@@ -15496,9 +15497,9 @@ integer,external :: omp_get_thread_num
 #else
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
-! carbon dioxide (379 ppmv)
+! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
     real :: co2
-    data co2 / 379.e-6 / 
+!   data co2 / 379.e-6 /
 ! methane (1774 ppbv)
     real :: ch4
     data ch4 / 1774.e-9 / 
@@ -15638,6 +15639,8 @@ integer,external :: omp_get_thread_num
 !                                                              
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
+! Annual function for co2 in WRF v4.2
+      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
 !
 !ccc Read time-varying trace gases concentrations and interpolate them to run date.
 !
@@ -16441,6 +16444,8 @@ integer,external :: omp_get_thread_num
          do k=kts,kte
             tten1d(k) = hr(icol,k)/86400.
             rthratenlw(i,k,j) = tten1d(k)/pi3d(i,k,j)
+            tten1d(k) = hrc(icol,k)/86400.
+            rthratenlwc(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
 !
       end do i_loop2

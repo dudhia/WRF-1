@@ -11481,6 +11481,7 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_LWRAD(                                        &
                        rthratenlw,                                &
+                       rthratenlwc,                               &
                        lwupt, lwuptc, lwuptcln, lwdnt, lwdntc, lwdntcln, &
                        lwupb, lwupbc, lwupbcln, lwdnb, lwdnbc, lwdnbcln, &
 !                      lwupflx, lwupflxc, lwdnflx, lwdnflxc,      &
@@ -11542,7 +11543,8 @@ CONTAINS
                                                            rho3d
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         INTENT(INOUT)  ::                            RTHRATENLW
+         INTENT(INOUT)  ::                            RTHRATENLW, &
+                                                      RTHRATENLWC
 
    REAL, DIMENSION( ims:ime, jms:jme )                          , &
          INTENT(INOUT)  ::                                   GLW, &
@@ -11744,9 +11746,9 @@ CONTAINS
 #else
 
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
-! carbon dioxide (379 ppmv)
+! carbon dioxide (379 ppmv) - this is being replaced by an annual function in v4.2
     real :: co2
-    data co2 / 379.e-6 / 
+!   data co2 / 379.e-6 / 
 ! methane (1774 ppbv)
     real :: ch4
     data ch4 / 1774.e-9 / 
@@ -11887,6 +11889,9 @@ CONTAINS
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
 !
+! Annual function for co2 in WRF v4.2
+      co2 = (280. + 90.*exp(0.02*(yr-2000)))*1.e-6
+
 !ccc Read time-varying trace gases concentrations and interpolate them to run date.
 !
 #ifdef CLWRFGHG
@@ -12734,6 +12739,8 @@ CONTAINS
          do k=kts,kte
             tten1d(k) = hr(ncol,k)/86400.
             rthratenlw(i,k,j) = tten1d(k)/pi3d(i,k,j)
+            tten1d(k) = hrc(ncol,k)/86400.
+            rthratenlwc(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
 
 !

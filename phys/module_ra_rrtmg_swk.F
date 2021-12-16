@@ -1,3 +1,12 @@
+#if( BUILD_RRTMK != 1)
+      MODULE module_ra_rrtmg_swk
+      CONTAINS
+      SUBROUTINE rrtmg_sw
+         REAL :: dummy
+         dummy = 1
+      END SUBROUTINE rrtmg_sw
+      END MODULE module_ra_rrtmg_swk
+#else
 !
 !-------------------------------------------------------------------------------
    module parrrsw_k
@@ -1723,7 +1732,7 @@
                       'ERROR: SNOW GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'   
              factor = (radsno - 2._rb)/3._rb
              index = int(factor)
-             if(index.eq.167) index = 166 
+             if(index.eq.46) index = 45 
              fint = factor-real(index)
              ib = ngb(ig)
              extcosno(ig) = extice3(index,ib)+fint*                            &
@@ -2080,11 +2089,10 @@
 !
 ! Recompute original s.s.a. to test for conservative solution
 !
-       denom = (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
-       if (abs(denom).eq.0.0_rb) then
-           denom = 1.0E-30_rb
-       end if
-       zwo= zw / denom
+       zwo = 0._rb
+       denom = 1._rb
+       if (zg .ne. 1._rb) denom = (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
+       if (zw .gt. 0._rb .and. denom .ne. 0._rb) zwo = zw / denom
 !
        if (zwo >= zwcrit) then
 !
@@ -4300,7 +4308,7 @@
                    7700._rb, 8050._rb,12850._rb,16000._rb,22650._rb,29000._rb, &
                    38000._rb,  820._rb/)
    wavenum2(:) = (/3250._rb, 4000._rb, 4650._rb, 5150._rb, 6150._rb, 7700._rb, &
-                   8050._rb, 2850._rb,16000._rb,22650._rb,29000._rb,38000._rb, &
+                   8050._rb,12850._rb,16000._rb,22650._rb,29000._rb,38000._rb, &
                    50000._rb, 2600._rb/)
    delwave(:) =  (/ 650._rb,  750._rb,  650._rb,  500._rb, 1000._rb, 1550._rb, &
                     350._rb, 4800._rb, 3150._rb, 6650._rb, 6350._rb, 9000._rb, &
@@ -10164,7 +10172,8 @@ contains
 !
 !-------------------------------------------------------------------------------
    subroutine rad_rrtmg_driver(                                                &
-                       rthratensw,rthratenlw,                                  &
+                       rthratenlw,rthratensw,                                  &
+                       rthratenlwc,rthratenswc,                                &
                        lwupflx, lwupflxc, lwdnflx, lwdnflxc,                   &
                        swupflx, swupflxc, swdnflx, swdnflxc,                   &
                        lwupt, lwuptc, lwdnt, lwdntc,                           &
@@ -10210,6 +10219,8 @@ contains
 
    real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratensw
    real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratenlw
+   real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratenswc
+   real, dimension(ims:ime,kms:kme,jms:jme), intent(inout) :: rthratenlwc
    real, dimension(ims:ime,kms:kme+2,jms:jme), optional, intent(inout) :: lwupflx
    real, dimension(ims:ime,kms:kme+2,jms:jme), optional, intent(inout) :: lwupflxc
    real, dimension(ims:ime,kms:kme+2,jms:jme), optional, intent(inout) :: lwdnflx
@@ -10790,6 +10801,7 @@ contains
                  visdir  ,visdif  ,nirdir  ,nirdif )
 
          rthratensw(i,kts:kte,j) = swhr(1,kts:kte)/86400.
+         rthratenswc(i,kts:kte,j) = swhrc(1,kts:kte)/86400.
          if(present(swupflx))then
            swupflx(i,kts:kte+2,j) = swuflx(1,kts:kte+2)
            swupflxc(i,kts:kte+2,j) = swuflxc(1,kts:kte+2)
@@ -10822,6 +10834,7 @@ contains
                       uflx, dflx, hr, uflxc, dflxc, hrc)
 !
        rthratenlw(i,kts:kte,j) = hr(1,kts:kte)/86400.
+       rthratenlwc(i,kts:kte,j) = hrc(1,kts:kte)/86400.
        if(present(lwupflx))then
          lwupflx(i,kts:kte+2,j) = uflx(1,kts:kte+2)
          lwupflxc(i,kts:kte+2,j) = uflxc(1,kts:kte+2)
@@ -12064,3 +12077,4 @@ contains
 !-------------------------------------------------------------------------------
    end module module_ra_rrtmg_swk
 !-------------------------------------------------------------------------------
+#endif
