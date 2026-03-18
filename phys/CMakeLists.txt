@@ -431,6 +431,15 @@ target_sources(
                   MYNN-EDMF/WRF/module_bl_mynnedmf_common.F90
                   MYNN-EDMF/WRF/module_bl_mynnedmf_driver.F90
 
+                  # TEMPO
+                  TEMPO/src/module_mp_tempo_cfgs.F90
+                  TEMPO/src/module_mp_tempo_params.F90
+                  TEMPO/src/module_mp_tempo_utils.F90
+                  TEMPO/src/module_mp_tempo_diags.F90
+                  TEMPO/src/module_mp_tempo_ml.F90
+                  TEMPO/src/module_mp_tempo_aerosols.F90
+                  TEMPO/src/module_mp_tempo_main.F90
+                  TEMPO/src/module_mp_tempo_driver.F90
                   # GFL
                   GFL/module_cu_gfl_deep.F90
                   GFL/module_cu_gfl_sh.F90
