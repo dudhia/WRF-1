@@ -3526,7 +3526,7 @@ CONTAINS
 
        da=6.2831853071795862*(julian-1)/365.
        eot=(0.000075+0.001868*cos(da)-0.032077*sin(da) &
-            -0.014615*cos(2*da)-0.04089*sin(2*da))*(229.18)
+            -0.014615*cos(2*da)-0.040849*sin(2*da))*(229.18)
        xt24=mod(xtime,1440.)+eot
        do j=jts,jte
           do i=its,ite
